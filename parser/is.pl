@@ -1,18 +1,22 @@
 use JBD::Parser::DSL;
 
+use JBD::Core::List 'zip';
 use lib 'lib';
 use Report 'report';
 
 my @inputs = (
-    input(\'1',    [Int]),
-    input(\'sub',  [Word]),
-    input(\'22/7', [Int, Op]),
-    input(\'3.14', [Int, Dot]),
+    input('2.',   [Float]),
+    input('1',    [Int]),
+    input('sub',  [Word]),
+    input('22/7', [Int, Op]),
+    input('3.14', [Int, Dot]),
     );
 
+
 my @parsers = (
+   is(Float),
    is(Int),                                     
-   cat(is(Word, 's'), is(Word, 'u'), is(Word, 'b')),
+   mapcat(zip map(Word, qw(s u b)), qw(s u b)),
    cat(star(is Int), is(Op, '/'), star(is Int)), 
    cat(star(is Int), is(Dot), star(is Int)), 
    );
