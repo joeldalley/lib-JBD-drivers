@@ -4,11 +4,11 @@ use lib 'lib';
 use Report 'report';
 
 my @inputs = (
-    input('2.',   [Float]),
-    input('1',    [Int]),
-    input('sub',  [Word]),
-    input('22/7', [Int, Op]),
-    input('3.14', [Int, Dot]),
+    input('2.',    [Float]),
+    input('-1',    [Int]),
+    input('sub',   [Word]),
+    input('22/-7', [Int, Op]),
+    input('3.14',  [Int, Dot]),
     );
 
 my @parsers = (

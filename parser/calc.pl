@@ -1,8 +1,6 @@
-use JBD::Core::stern;
-
 use lib 'lib';
 use Calculator 'calculate';
-use Report 'report';
 
 my $text = shift || '0';
-report calculate $text;
+my $res = calculate $text;
+print "Calculate `$text`  ==>  $res\n";
