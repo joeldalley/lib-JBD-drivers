@@ -31,7 +31,6 @@ sub calculate($) {
     my $in = shift;
     my $parser = cat expr, is End_of_Input;
     my $input = input $in, [Int, Op];
-    use Data::Dumper; print Dumper $input;
     my ($tokens) = $parser->($input);
     $tokens;
 } 
@@ -57,7 +56,6 @@ sub compute {
     my @not = grep $_->typeis(Nothing), @$tok;
 
     my $expr = join shift(@op)->value, map $_->value, @int;
-    print "$expr\n";
     my $val = eval $expr; croak $@ if $@;
 
     [JBD::Parser::Token->new(ref Int, $val), 

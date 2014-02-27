@@ -4,5 +4,5 @@ use lib 'lib';
 use Calculator 'calculate';
 use Report 'report';
 
-my $text = shift || '1';
+my $text = shift || '0';
 report calculate $text;
