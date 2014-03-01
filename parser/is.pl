@@ -3,20 +3,22 @@ use JBD::Parser::DSL;
 use lib 'lib';
 use Report 'report';
 
+my $opts = {tail => [JBD::Parser::Token->end_of_input]};
+
 my @inputs = (
-    input('2.',    [Float]),
-    input('-1',    [Int]),
-    input('sub',   [Word]),
-    input('22/-7', [Int, Op]),
-    input('3.14',  [Int, Dot]),
+    input('2.',    [Float],    $opts),
+    input('-1',    [Int],      $opts),
+    input('sub',   [Word],     $opts),
+    input('22/-7', [Int, Op],  $opts),
+    input('3.14',  [Int, Dot], $opts),
     );
 
 my @parsers = (
    is(Float),
    is(Int),                                     
    is(Word, 'sub'),
-   cat(star(is Int), is(Op, '/'), star(is Int)), 
-   cat(star(is Int), is(Dot), star(is Int)), 
+   (star(is Int) & is(Op, '/') & star is Int), 
+   (star(is Int) & is(Dot) & star is Int), 
    );
 
 while (@inputs) {
