@@ -1,19 +1,23 @@
 use Calculator::App 'calculate';
 
-# e is allowed, because sometimes floats have e in them.
+# Calculator REPL.
+# @author Joel Dalley
+# @version 2014/Mar/02
+
+# e|E is allowed, because sometimes floats have e in them.
 my $alph = join '|', grep $_ ne 'e', ('a' .. 'z');
 
 # Intro. Classy.
-print "\n\tC A L C U L A T O R",
-      "\n\n\tExample :> (1 + 2.5) * 3 / (4 + 8.20) - 1\n\n";
+print join "\n\n", 
+           join(' ', split //, "\tCALCULATOR"),
+           "\t Example :> (1 + 2.5) * 3 / 4", '';
 
 # Read, eval, print loop.
 while (1) {
-    print "\t:> ";
-    my $res = 'undefined';
+    print "\t :> ";
     chomp(my $text = <STDIN>);
     last if $text =~ m{^[$alph]}io;
-    eval { $res = calculate $text };
-    print "\t:> ERROR: $@" if $@;
-    print "\t:> $res\n";
+    my $ans; eval {$ans = calculate $text};
+    print "\t :> ERROR: $@" if $@;
+    print "\t :> $ans\n" if !$@;
 }
