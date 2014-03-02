@@ -9,6 +9,7 @@ use JBD::Core::Exporter ':omni';
 
 my ($E, $T, $F);
 
+
 # Grammatical productions.
 sub expr()          { $E }
 sub term()          { $T }
@@ -19,14 +20,12 @@ sub term_op_expr()  { $T ^ (op '+' | op '-') ^ $E }
 sub fact_op_term()  { $F ^ (op '*' | op '/') ^ $T }
 
 
-# @return array Types the calculator can compute values for.
-sub operands() { Float, Int }
-
-# @return JBD::Parser coderef A rule that parses any operand.
-sub operand() { any map type $_, operands }
-
-# @return array Operators the calculator supports.
+# The grammar alphabet.
+sub operands()  { Float, Int }
 sub operators() { (qw(+ * - /)) }
+
+# Parser matching any operand type.
+sub operand() { any map type $_, operands }
 
 
 # Initialize parsers and define grammar rules.
