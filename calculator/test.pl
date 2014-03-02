@@ -64,7 +64,8 @@ while (my $pair = $pairsof->()) {
     my ($correct, $expr) = @$pair;
     my $ans; eval {$ans = calculate $expr};
     my $print_ans = defined $ans ? $ans : 'undefined';
-    my $msg = "[$cnt] `$expr`${\$spacer->($expr)} => $print_ans";
+    my $msg = sprintf '[%02d] `%s`%s => %s', 
+              $cnt, $expr, $spacer->($expr), $print_ans;
     print "$msg\n";
     $cnt++;
 }
