@@ -30,16 +30,15 @@ sub operators() { (qw(+ * - /)) }
 
 
 # Initialize parsers and define grammar rules.
-# @param hash [opt] %transformers Token transformer subs.
+# @param hash [opt] %trans Token transformer subs.
 sub init(%) {
-    my %transformers = @_;
+    my %trans = @_;
 
     # Transformer helper.
     my $def = sub {
         no strict 'refs';
-        my $name = shift;
-        return &$name if !$transformers{$name};
-        trans &$name, $transformers{$name};
+        my $sub = shift;
+        $trans{$sub} ? trans &$sub, $trans{$sub} : &$sub;
     };
 
     # Parsers.
