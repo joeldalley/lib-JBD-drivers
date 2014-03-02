@@ -72,7 +72,7 @@ sub replace_with_value($) {
     my $tok = shift or return;
 
     # Evaluate.
-    my $val = eval join '', map $_->value, 
+    my $val = eval join ' ', map $_->value, 
                    grep $_->typeis(operands, Op), @$tok;
     croak $@ if $@;
  
@@ -85,7 +85,7 @@ sub replace_with_value($) {
 sub val_to_type($) {
     my $val = shift;
     my @types = sort {length $b <=> length $a} 
-                grep $_->($val), operands;
+                grep defined $_->($val), operands;
     @types ? shift @types : undef;
 }
 
