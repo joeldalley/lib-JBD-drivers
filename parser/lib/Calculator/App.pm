@@ -26,18 +26,18 @@ Calculator::Grammar::init(
 #///////////////////////////////////////////////////////////////
 #// Interface //////////////////////////////////////////////////
 
-# @param string $text User input, e.g., '3 * (.5 + 2) + -1.*2'
+# @param string $text User input, e.g., '3 * (.5 + 2) + -1. * 2'
 # @return scalar Calculation result.
 sub calculate($) {
     my $text = shift;
 
     # Tokenize user input.
     $input = input $text, [operands, Op], {
-        tail => [JBD::Parser::Token->end_of_input]
+        tail => [token End_of_Input]
     };
 
     # Parse tokens.
-    my $parser = expr & is End_of_Input;
+    my $parser = expr ^ type End_of_Input;
     my ($tok) = $parser->($input);
     croak "Input doesn't parse `$text`" unless ref $tok;
 
@@ -48,13 +48,7 @@ sub calculate($) {
 
     # Ensure the calculator is closed under its operations.
     die "Undefined result for `$text`" if !defined $res;
-
-    my @is;
-    for my $rand (operands) {
-        my ($t, $v) = $rand->($res);
-        push @is, $v if defined $v && $v eq $res;
-    }
-    die "Range error `$res`" unless @is == 1;
+    die "Range error `$res`" unless val_to_type($res);
     $res;
 }
 
@@ -67,8 +61,7 @@ sub calculate($) {
 sub remove_parentheses($) {
     my $tok = shift or return;
     for ($tok->[0], $tok->[@$tok-1]) {
-        next unless $_->anyof([Op], [qw|( )|]);
-        $_ = JBD::Parser::Token->nothing; 
+        $_ = token Nothing if $_->anyof([Op], [qw|( )|]);
     }
     $tok;
 }
@@ -83,15 +76,17 @@ sub replace_with_value($) {
                    grep $_->typeis(operands, Op), @$tok;
     croak $@ if $@;
  
-    [shift(tokens $val, [operands]), # Result token.
-     map JBD::Parser::Token->nothing, (1 .. $#$tok)];
+    [shift(tokens $val, [operands]), 
+     map token(Nothing), (1 .. $#$tok)];
 }
 
+# @param mixed $val A token value.
+# @return mixed Lexical token type, or undef.
 sub val_to_type($) {
     my $val = shift;
-    my @is = grep $_->($val), operands;
-    return shift @is if @is && @is == 1;
-    undef;
+    my @types = sort {length $b <=> length $a} 
+                grep $_->($val), operands;
+    @types ? shift @types : undef;
 }
 
 1;

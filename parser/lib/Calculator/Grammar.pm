@@ -13,17 +13,17 @@ my ($E, $T, $F);
 sub expr()          { $E }
 sub term()          { $T }
 sub factor()        { $F }
-sub op(;$)          { is Op, shift }
-sub enclosed_expr() { op '(' & $E & op ')' }
-sub term_op_expr()  { $T & (op '+' | op '-') & $E }
-sub fact_op_term()  { $F & (op '*' | op '/') & $T }
+sub op(;$)          { pair Op, shift }
+sub enclosed_expr() { op '(' ^ $E ^ op ')' }
+sub term_op_expr()  { $T ^ (op '+' | op '-') ^ $E }
+sub fact_op_term()  { $F ^ (op '*' | op '/') ^ $T }
 
 
 # @return array Types the calculator can compute values for.
 sub operands() { Float, Int }
 
 # @return JBD::Parser coderef A rule that parses any operand.
-sub operand() { any map is($_), operands }
+sub operand() { any map type $_, operands }
 
 # @return array Operators the calculator supports.
 sub operators() { (qw(+ * - /)) }

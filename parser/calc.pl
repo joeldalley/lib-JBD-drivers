@@ -6,7 +6,7 @@ my $alph = join '|', grep $_ ne 'e', ('a' .. 'z');
 
 # Intro. Classy.
 print "\n\tC A L C U L A T O R",
-      "\n\n\tExample :> (1+2.5) * 3 / (4 + 8.20) - 1\n\n";
+      "\n\n\tExample :> (1 + 2.5) * 3 / (4 + 8.20) - 1\n\n";
 
 # Read, eval, print loop.
 while (1) {

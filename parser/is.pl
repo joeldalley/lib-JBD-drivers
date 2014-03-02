@@ -3,7 +3,7 @@ use JBD::Parser::DSL;
 use lib 'lib';
 use Report 'report';
 
-my $opts = {tail => [JBD::Parser::Token->end_of_input]};
+my $opts = {tail => [token End_of_Input]}; 
 
 my @inputs = (
     input('2.',    [Float],    $opts),
@@ -14,18 +14,21 @@ my @inputs = (
     );
 
 my @parsers = (
-   is(Float),
-   is(Int),                                     
-   is(Word, 'sub'),
-   (star(is Int) & is(Op, '/') & star is Int), 
-   (star(is Int) & is(Dot) & star is Int), 
+   type Float,
+   type Int,                                     
+   pair(Word, 'sub'),
+   (star type Int ^ pair(Op, '/') ^ star type Int), 
+   (star type Int ^ type Dot ^ star type Int), 
    );
+
+print scalar type Float, "\n";
 
 while (@inputs) {
     my $in = shift @inputs;
     my $p = shift @parsers;
     while ($in->num_left) {
-        my ($tok) = cat($p, is End_of_Input)->($in);
+        my $cat = $p ^ type End_of_Input;
+        my ($tok) = $cat->($in);
         last unless report $tok;
     }
 }
