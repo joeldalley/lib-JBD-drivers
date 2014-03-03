@@ -1,14 +1,17 @@
 use JBD::Parser::DSL;
 use JBD::Core::List 'pairsof';
 use Calculator::App 'calculate';
+use Test::More;
 
 # Calculator tests.
 # @author Joel Dalley
 # @version 2014/Mar/02
 
 my $num_tests = shift;
-sub NUM_TESTS {$num_tests || 10}
+
+sub NUM_TESTS {$num_tests || 100}
 sub MAX_DEPTH {2}
+sub PRECISION {8}
 
 sub gen_num { 
     my $num = rand 10; 
@@ -56,6 +59,7 @@ while (@tests < (2 * NUM_TESTS)) {
     my $num = gen_num;
     my $expr = gen_expr $num, $dep;
     my $ans = eval $expr;
+    next unless defined $ans;
     push @tests, $ans, $expr;
 }
 
@@ -67,10 +71,12 @@ my $cnt = 1;
 while (my $pair = $pairsof->()) {
     my ($correct, $expr) = @$pair;
     my $ans; eval {$ans = calculate $expr};
-    warn $@ if $@;
     my $print_ans = defined $ans ? $ans : 'undefined';
     my $msg = sprintf '[%02d] `%s`%s => %s', 
               $cnt, $expr, $spacer->($expr), $print_ans;
-    print "$msg\n";
+    ok index($ans, substr $correct, 0, PRECISION) == 0, $msg;
+    #print "$msg\n";
     $cnt++;
 }
+
+done_testing;
