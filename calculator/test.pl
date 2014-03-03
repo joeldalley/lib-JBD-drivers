@@ -6,7 +6,8 @@ use Calculator::App 'calculate';
 # @author Joel Dalley
 # @version 2014/Mar/02
 
-sub NUM_TESTS {20}
+my $num_tests = shift;
+sub NUM_TESTS {$num_tests || 10}
 sub MAX_DEPTH {2}
 
 sub gen_num { 
@@ -38,9 +39,12 @@ sub spaces {
 }
 
 sub maxlen {
-    my %tests = @_;
-    my @v = sort {length $a <=> length $b} values %tests;
-    length pop @v;
+    my $max = 0;
+    for (@_) { 
+        my $l = defined $_ ? length $_ : 0; 
+        $max = $l if $l > $max;
+    }
+    $max;
 }
 
 sub currdepth { my $d = 0; sub {$d += shift} }
@@ -50,7 +54,7 @@ my $dep = currdepth;
 
 while (@tests < (2 * NUM_TESTS)) {
     my $num = gen_num;
-    my $expr = spaces gen_expr $num, $dep;
+    my $expr = gen_expr $num, $dep;
     my $ans = eval $expr;
     push @tests, $ans, $expr;
 }
@@ -63,6 +67,7 @@ my $cnt = 1;
 while (my $pair = $pairsof->()) {
     my ($correct, $expr) = @$pair;
     my $ans; eval {$ans = calculate $expr};
+    warn $@ if $@;
     my $print_ans = defined $ans ? $ans : 'undefined';
     my $msg = sprintf '[%02d] `%s`%s => %s', 
               $cnt, $expr, $spacer->($expr), $print_ans;
