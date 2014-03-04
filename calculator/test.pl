@@ -67,16 +67,14 @@ my $pairsof = pairsof @tests;
 my $maxlen = maxlen @tests;
 my $spacer = sub { " " x ($maxlen - length $_[0]) };
 
-my $cnt = 1;
 while (my $pair = $pairsof->()) {
     my ($correct, $expr) = @$pair;
     my $ans; eval {$ans = calculate $expr};
     my $print_ans = defined $ans ? $ans : 'undefined';
-    my $msg = sprintf '[%02d] `%s`%s => %s', 
-              $cnt, $expr, $spacer->($expr), $print_ans;
-    ok index($ans, substr $correct, 0, PRECISION) == 0, $msg;
-    #print "$msg\n";
-    $cnt++;
+    my $msg = sprintf '`%s`%s => %s', 
+              $expr, $spacer->($expr), $print_ans;
+    $correct = substr $correct, 0, PRECISION;
+    ok $ans && index($ans, $correct) == 0, $msg;
 }
 
 done_testing;

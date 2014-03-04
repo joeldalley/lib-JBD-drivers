@@ -5,10 +5,10 @@ package Calculator::App;
 # @author Joel Dalley
 # @version 2014/Feb/28
 
-use JBD::Parser::DSL;
-use JBD::Core::Exporter ':omni';
-use Calculator::Grammar qw(expr operands);
 use Carp 'croak';
+use JBD::Parser::DSL;
+use Calculator::Grammar 'expr';
+use JBD::Core::Exporter ':omni';
 
 # Using init, alter the calculator's grammar so that the parsing
 # process is now also a reduction process, where we reduce valid
@@ -32,7 +32,7 @@ sub calculate($) {
     my $text = shift;
 
     # Tokenize user input.
-    $input = input $text, [operands, Op], {
+    $input = input $text, [Num, Op], {
         tail => [token End_of_Input]
     };
 
@@ -42,13 +42,13 @@ sub calculate($) {
     croak "Input doesn't parse `$text`" unless ref $tok;
 
     # The result.
-    $tok = [grep !$_->typeis(Nothing, End_of_Input), @$tok];
+    $tok = [grep $_->typeis(Num), @$tok];
     die "Exactly one token expected" unless @$tok == 1;
     my $res = shift(@$tok)->value;
 
     # Ensure the calculator is closed under its operations.
     die "Undefined result for `$text`" if !defined $res;
-    die "Range error `$res`" unless val_to_type($res);
+    die "Range error `$res`" unless Num->($res);
     $res;
 }
 
@@ -60,8 +60,8 @@ sub calculate($) {
 # @return arrayref Transformed tokens array.
 sub remove_parentheses($) {
     my $tok = shift or return;
-    for ($tok->[0], $tok->[@$tok-1]) {
-        $_ = token Nothing if $_->anyof([Op], [qw|( )|]);
+    for ($tok->[0], $tok->[@$tok-1]) { 
+        $_ = token Nothing if $_->anyof([Op], [qw{) (}]);
     }
     $tok;
 }
@@ -73,20 +73,11 @@ sub replace_with_value($) {
 
     # Evaluate.
     my $val = eval join ' ', map $_->value, 
-                   grep $_->typeis(operands, Op), @$tok;
+                   grep $_->typeis(Num, Op), @$tok;
     croak $@ if $@;
  
-    [shift(tokens $val, [operands]), 
-     map token(Nothing), (1 .. $#$tok)];
-}
-
-# @param mixed $val A token value.
-# @return mixed Lexical token type, or undef.
-sub val_to_type($) {
-    my $val = shift;
-    my @types = sort {length $b <=> length $a} 
-                grep defined $_->($val), operands;
-    @types ? shift @types : undef;
+    my $new = shift tokens $val, [Num];
+    [$new, map token(Nothing), (1 .. $#$tok)];
 }
 
 1;
