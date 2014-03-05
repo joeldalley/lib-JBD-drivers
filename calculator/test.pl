@@ -11,11 +11,11 @@ my $num_tests = shift;
 
 sub NUM_TESTS {$num_tests || 100}
 sub MAX_DEPTH {2}
-sub PRECISION {8}
+sub PRECISION {4}
 
 sub gen_num { 
     my $num = rand 10; 
-    $num = rand 1 > .5 ? int $num : sprintf '%.3f', $num; 
+    $num = rand 1 > .5 ? int $num : sprintf '%.4f', $num; 
     $num = rand 1 > .5 ? "-$num" : $num;
 }
 
@@ -23,7 +23,7 @@ sub expr_body {
     my $e = shift;
     my $pm = rand 1 < .5 ? '+' : '-';
     my $md = rand 1 < .5 ? '*' : '/';
-    $e = rand 1 > .5 ? "$e $md " . gen_num : $e;
+    #$e = rand 1 > .5 ? "$e $md " . gen_num : $e;
     $e = rand 1 > .5 ? "$e $pm " . gen_num : $e;
     $e = rand 1 > .25 ? "($e)" : $e;
 }
@@ -69,12 +69,12 @@ my $spacer = sub { " " x ($maxlen - length $_[0]) };
 
 while (my $pair = $pairsof->()) {
     my ($correct, $expr) = @$pair;
-    my $ans; eval {$ans = calculate $expr};
+    my $ans; eval {$ans = sprintf '%.4f', calculate $expr};
     my $print_ans = defined $ans ? $ans : 'undefined';
     my $msg = sprintf '`%s`%s => %s', 
               $expr, $spacer->($expr), $print_ans;
     $correct = substr $correct, 0, PRECISION;
-    ok $ans && index($ans, $correct) == 0, $msg;
+    ok defined $ans && index($ans, $correct) == 0, $msg;
 }
 
 done_testing;

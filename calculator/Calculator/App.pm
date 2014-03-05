@@ -7,77 +7,58 @@ package Calculator::App;
 
 use Carp 'croak';
 use JBD::Parser::DSL;
-use Calculator::Grammar 'expr';
 use JBD::Core::Exporter ':omni';
 
-# Using init, alter the calculator's grammar so that the parsing
-# process is now also a reduction process, where we reduce valid
-# expressions, terms and factors down to a single value-bearing
-# operand token (the simple case of factor()), whose value is
-# the result of the computation.
-
-Calculator::Grammar::init(
-    term_op_expr  => \&replace_with_value,
-    fact_op_term  => \&replace_with_value,
-    enclosed_expr => \&remove_parentheses,
-);
-
+use Calculator::Grammar qw(expr types operators);
+Calculator::Grammar::init();
 
 #///////////////////////////////////////////////////////////////
 #// Interface //////////////////////////////////////////////////
 
-# @param string $text User input, e.g., '3 * (.5 + 2) + -1. * 2'
+# @param string $text User input, e.g., '3 * (.5 + 2) * -2'
 # @return scalar Calculation result.
 sub calculate($) {
     my $text = shift;
 
-    # Tokenize user input.
-    $input = input $text, [Num, Op], {
+    # Tokenize user input string.
+    my $input = input $text, [types, Op], {
         tail => [token End_of_Input]
     };
 
     # Parse tokens.
     my $parser = expr ^ type End_of_Input;
     my ($tok) = $parser->($input);
-    croak "Input doesn't parse `$text`" unless ref $tok;
+    ref $tok or croak parse_error($text, $input);
 
-    # The result.
-    $tok = [grep $_->typeis(Num), @$tok];
-    die "Exactly one token expected" unless @$tok == 1;
-    my $res = shift(@$tok)->value;
+    # Evaluate & tokenize value string.
+    my $expr = join ' ', map  $_->value, 
+               grep $_->anyof([Op], [operators])
+                 || $_->typeis(types), @$tok;
+    my $val = eval $expr; 
+    my $res = shift tokens $val, [types] if defined $val;
 
-    # Ensure the calculator is closed under its operations.
-    die "Undefined result for `$text`" if !defined $res;
-    die "Range error `$res`" unless Num->($res);
-    $res;
+    # Legit?
+    croak "Calculator::App::calculate(`$text`): "
+        . " eval(`$expr`) produces an error" if $@;
+    die range_error($expr, 'undefined') if !defined $val;
+    die range_error($expr, "no token for `$val`") if !@$res;
+
+    $res->value;
 }
+
 
 #///////////////////////////////////////////////////////////////
-#/ Parser Transformers /////////////////////////////////////////
+#/ Used internaly //////////////////////////////////////////////
 
-
-# @param arrayref $tok Array of JBD::Parser::Tokens.
-# @return arrayref Transformed tokens array.
-sub remove_parentheses($) {
-    my $tok = shift or return;
-    for ($tok->[0], $tok->[@$tok-1]) { 
-        $_ = token Nothing if $_->anyof([Op], [qw{) (}]);
-    }
-    $tok;
+# Prints parse error message w/ the given detail.
+sub parse_error($$) {
+    my ($text, $in) = @_;
+    my $max = $in->max;
+    my $reached = substr $text, $max;
+    "Parse error `$text` - `$reached` does not parse";
 }
 
-# @param arrayref $tok Array of JBD::Parser::Tokens.
-# @return arrayref Transformed tokens array.
-sub replace_with_value($) {
-    my $tok = shift or return;
-
-    # Evaluate.
-    my $val = eval join ' ', map $_->value, 
-                   grep $_->typeis(Num, Op), @$tok;
-    croak $@ if $@;
- 
-    my $new = shift tokens $val, [Num];
-    [$new, map token(Nothing), (1 .. $#$tok)];
-}
+# Prints range error message w/ the given detail.
+sub range_error($$) { "Range error `$_[0]` - $_[1]" }
 
 1;
