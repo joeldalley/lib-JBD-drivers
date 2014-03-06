@@ -41,7 +41,7 @@ sub calculate($) {
     croak "Calculator::App::calculate(`$text`): "
         . " eval(`$expr`) produces an error" if $@;
     die range_error($expr, 'undefined') if !defined $val;
-    die range_error($expr, "no token for `$val`") if !@$res;
+    die range_error($expr, "no token for `$val`") if !$res;
 
     $res->value;
 }
