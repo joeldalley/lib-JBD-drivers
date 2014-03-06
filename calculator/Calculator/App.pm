@@ -50,15 +50,20 @@ sub calculate($) {
 #///////////////////////////////////////////////////////////////
 #/ Used internaly //////////////////////////////////////////////
 
-# Prints parse error message w/ the given detail.
+# Returns parse error message w/ the given detail.
 sub parse_error($$) {
     my ($text, $in) = @_;
-    my $max = $in->max;
-    my $reached = substr $text, $max;
-    "Parse error `$text` - `$reached` does not parse";
+    my ($tok, $max) = ($in->tokens, $in->max);
+    my $lo = $max ? $max-1 : 0;
+    my $hi = $#$tok - $lo > 2 ? $lo + 2 : $#$tok;
+    my $el = @$tok > 4 ? ' ... ' : '';
+    my $left = join ' ', map $_->value, 
+               grep $_->value, @$tok[$lo .. $hi];
+    'Parse error: Parsed ' . scalar @$tok .
+    " tokens before error at `$el$left`";
 }
 
-# Prints range error message w/ the given detail.
+# Returns range error message w/ the given detail.
 sub range_error($$) { "Range error `$_[0]` - $_[1]" }
 
 1;
