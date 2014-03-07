@@ -9,8 +9,9 @@ use Carp 'croak';
 use JBD::Parser::DSL;
 use JBD::Core::Exporter ':omni';
 
-use Calculator::Grammar qw(init expr types operators);
-init;         # Construct Calculator::Grammar parsers.
+use Calculator::Grammar 
+    qw(init expr types primitive_operators);
+init; 
 
 # @param string $text User input, e.g., '3 * (.5 + 2) * -2'
 # @return scalar Calculation result.
@@ -29,7 +30,7 @@ sub calculate($) {
 
     # Evaluate & tokenize value string.
     my $expr = join ' ', map  $_->value, 
-               grep $_->anyof([Op], [operators])
+               grep $_->anyof([Op], [primitive_operators])
                  || $_->typeis(types), @$tok;
     my $val = eval $expr; 
     my $res = shift tokens $val, [types] if defined $val;

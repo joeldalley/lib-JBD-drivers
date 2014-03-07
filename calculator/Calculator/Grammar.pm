@@ -9,9 +9,11 @@ use JBD::Core::Exporter ':omni';
 
 my ($E, $T, $F);
 
-# Operand types, and supported operator symbols.
-sub types { Signed, Unsigned }
-sub operators { qw(+ - * /) }
+# Calculator operand types.
+sub types() { Signed, Unsigned }
+
+# Calulator operators.
+sub primitive_operators() { qw(+ - * /) }
 
 
 # Grammatical productions.
@@ -19,10 +21,11 @@ sub expr()          { $E }
 sub term()          { $T }
 sub factor()        { $F }
 sub op(;$)          { pair Op, shift }
+sub operand()       { any map type $_, types }
 sub enclosed_expr() { op '(' ^ $E ^ op ')' }
 sub term_op_expr()  { $T ^ (op '+' | op '-') ^ $E }
 sub fact_op_term()  { $F ^ (op '*' | op '/') ^ $T }
-sub operands()      { any map type $_, types }
+
 
 # Initialize parsers and define grammar rules.
 # @param hash [opt] %trans Token transformer subs.
@@ -45,7 +48,7 @@ sub init(%) {
     # Grammar rules.
     $expr = $def->('term_op_expr') | $T;
     $term = $def->('fact_op_term') | $F;
-    $fact = operands | $def->('enclosed_expr');
+    $fact = operand | $def->('enclosed_expr');
 }
 
 1;
