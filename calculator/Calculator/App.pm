@@ -7,16 +7,14 @@ package Calculator::App;
 
 use Carp 'croak';
 use JBD::Core::Exporter ':omni';
-use JBD::Core::List 'zip';
+use JBD::Core::List qw(zip pairsof);
 
 use JBD::Parser::DSL;
 use Calculator::Grammar 
     qw(expr term factor types op primitive_operators);
 
-use constant {
-    Nicht => token(Nothing),
-    Prims => [primitive_operators]
-};
+use constant Nicht => token Nothing;
+use constant Prims => primitive_operators;
 
 # Replace two subs with ones that compute intermediate
 # values for sub-expressions; this way, we control
@@ -29,15 +27,17 @@ use constant {
 
 Calculator::Grammar::init(
     enclosed_expr => sub {
-        parser {
+        my $p = op '(' ^ expr ^ op ')';
+
+        parser { 
             my $in = shift;
-            my ($tok) = cat(op '(', expr, op ')')->($in);
+            my ($tok) = $p->($in);
             replace($tok, $in);
         };
     },
     fact_op_term => sub {
-        my $op = op '*' | op '/';
-        my $p = factor ^ star($op ^ (factor | term));
+        my $f = factor;
+        my $p = $f ^ star((op '*' | op '/') ^ ($f | term));
 
         parser {
             my $in = shift;
@@ -56,10 +56,10 @@ Calculator::Grammar::init(
 sub calculate($) {
     my $text = shift;
 
-    my $parser = expr ^ type End_of_Input;
     my $in_opts = {tail => [token End_of_Input]};
-    my ($tok) = $parser->(input $text, [types, Op], $in_opts);
-    ref $tok or croak $input->parse_error;
+    my $in      = input $text, [types, Op], $in_opts;
+    my ($tok)   = (expr ^ type End_of_Input)->($in);
+    ref $tok or croak $in->parse_error;
 
     compute("calculate($text)", $tok)->value;
 }
@@ -84,9 +84,11 @@ sub compute($$) {
 
     # Compute.
     my @values = grep defined $_, map $_->value, @$tokens;
-    my $val = shift @values;
-    while (@values) {
-        my ($op, $num) = (shift @values, shift @values);
+    my ($val, $pairs) = (shift @values, pairsof @values);
+
+    while (my $pair = $pairs->()) {
+        my ($op, $num) = @$pair;
+        croak "Invalid Op `$op`" if !grep $_ eq $op, Prims;
         $val = eval $math{$op}->($val, $num);
         warn $@ if $@  # Division by zero.
     }
@@ -108,7 +110,7 @@ sub replace {
     my ($tok, $in) = @_;
 
     if (ref $tok) {
-        my @rators = grep $_->anyof([Op], Prims), @$tok;
+        my @rators = grep $_->anyof([Op], [Prims]), @$tok;
         my @rands  = grep $_->typeis(types), @$tok;
         my $res = $rands[0];
 
