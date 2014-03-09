@@ -28,15 +28,15 @@ sub fact_op_term()  { $F ^ (op '*' | op '/') ^ $T }
 
 
 # Initialize parsers and define grammar rules.
-# @param hash [opt] %trans Token transformer subs.
+# @param hash [opt] %replace Map of {symbol => coderef}.
 sub init(%) {
-    my %trans = @_;
+    my %replace = @_;
 
-    # Transformer helper.
+    # Replacer. 
     my $def = sub {
         no strict 'refs';
         my $sub = shift;
-        $trans{$sub} ? trans &$sub, $trans{$sub} : &$sub;
+        $replace{$sub} ? &{$replace{$sub}} : &$sub;
     };
 
     # Parsers.

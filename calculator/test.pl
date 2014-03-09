@@ -11,7 +11,7 @@ my $num_tests = shift;
 
 sub NUM_TESTS {$num_tests || 100}
 sub MAX_DEPTH {2}
-sub PRECISION {4}
+sub TOLERANCE { .001 }
 
 sub gen_num { 
     my $num = rand 10; 
@@ -23,7 +23,7 @@ sub expr_body {
     my $e = shift;
     my $pm = rand 1 < .5 ? '+' : '-';
     my $md = rand 1 < .5 ? '*' : '/';
-    #$e = rand 1 > .5 ? "$e $md " . gen_num : $e;
+    $e = rand 1 > .5 ? "$e $md " . gen_num : $e;
     $e = rand 1 > .5 ? "$e $pm " . gen_num : $e;
     $e = rand 1 > .25 ? "($e)" : $e;
 }
@@ -34,11 +34,6 @@ sub gen_expr {
        ? expr_body $e : gen_expr(expr_body($e), $dep);
     $dep->(-1);
     $e;
-}
-
-sub spaces {
-    my @e = split //, shift;
-    join '', grep $_ !~ /\s/ || rand 1 < .5, @e;
 }
 
 sub maxlen {
@@ -66,15 +61,17 @@ while (@tests < (2 * NUM_TESTS)) {
 my $pairsof = pairsof @tests;
 my $maxlen = maxlen @tests;
 my $spacer = sub { " " x ($maxlen - length $_[0]) };
+my $approx = sub { sprintf '%.4f', $_[0] };
 
 while (my $pair = $pairsof->()) {
     my ($correct, $expr) = @$pair;
-    my $ans; eval {$ans = sprintf '%.4f', calculate $expr};
-    my $print_ans = defined $ans ? $ans : 'undefined';
-    my $msg = sprintf '`%s`%s => %s', 
+
+    my $ans; eval {$ans = calculate $expr};
+    my $print_ans = defined $ans ? $approx->($ans) : 'UNDEF';
+    my $msg = sprintf '`%s`%s => %s',
               $expr, $spacer->($expr), $print_ans;
-    $correct = substr $correct, 0, PRECISION;
-    ok defined $ans && index($ans, $correct) == 0, $msg;
+
+    ok defined $ans && abs($correct - $ans) < TOLERANCE, $msg;
 }
 
 done_testing;
