@@ -116,8 +116,7 @@ sub replace {
 
         if (@rators) {
             my $str = join ' ', map "[$_]", @$tok;
-            my $expr_tok = [zip @rands, @rators, undef];
-            pop @$expr_tok; # Remove that undef.
+            my $expr_tok = [grep $_, zip @rands, @rators];
             $res = compute("replace($str)", $expr_tok);
         }
 
