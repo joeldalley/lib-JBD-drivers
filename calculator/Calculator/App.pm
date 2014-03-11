@@ -14,6 +14,7 @@ use Calculator::Grammar
     qw(expr term factor types op primitive_operators);
 
 use constant Nicht => token Nothing;
+use constant EOI   => token End_of_Input;
 use constant Prims => primitive_operators;
 
 # Replace two subs with ones that compute intermediate
@@ -54,14 +55,12 @@ Calculator::Grammar::init(
 # @param string $text User input, e.g., '3 * (.5 + 2) * -2'
 # @return scalar Calculation result.
 sub calculate($) {
-    my $text = shift;
-
-    my $in_opts = {tail => [token End_of_Input]};
-    my $in      = input $text, [types, Op], $in_opts;
-    my ($tok)   = (expr ^ type End_of_Input)->($in);
-    ref $tok or croak $in->parse_error;
-
-    compute("calculate($text)", $tok)->value;
+    my $text   = shift;
+    my $lexed  = tokens $text, [types, Op];
+    my $state  = parser_state [@$lexed, token End_of_Input];
+    my $parsed = (expr ^ type End_of_Input)->($state)
+                 or croak $state->error_string;
+    compute("calculate($text)", $parsed)->value;
 }
 
 
