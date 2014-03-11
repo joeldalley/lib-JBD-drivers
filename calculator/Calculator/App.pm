@@ -22,7 +22,7 @@ use constant Prims => primitive_operators;
 # parenthesized sub-expressions are evaulated first,
 # and that a sequence of * and/or / Ops is evaluated
 # from left to right, and thus, ultimately, that each
-# full expression $EXPR evaluates to the same value 
+# full expression, $EXPR, evaluates to the same value 
 # that eval($EXPR) would produce.
 
 Calculator::Grammar::init(
@@ -85,19 +85,17 @@ sub compute($$) {
     # Compute.
     my @values = grep defined $_, map $_->value, @$tokens;
     my ($val, $pairs) = (shift @values, pairsof @values);
-
     while (my $pair = $pairs->()) {
         my ($op, $num) = @$pair;
-        croak "Invalid Op `$op`" if !grep $_ eq $op, Prims;
-        $val = eval $math{$op}->($val, $num);
-        warn $@ if $@  # Division by zero.
+        die "Illegal division by zero `$val/$num`"
+            if $op eq '/' && $num == 0;
+        $val = $math{$op}->($val, $num);
     }
     my $res = tokens $val, [types] if defined $val;
 
     # Ensure computation is closed under %math ops.
-    my $range_error = sub {"Range error `$_[0]` - $_[1]"};
-    die $range_error->($expr, 'undefined') if !defined $val;
-    die $range_error->($expr, "no token for `$val`") if !$res;
+    die 'Range error: undefined value' if !defined $val;
+    die "Range error: no token for `$val`" if !$res;
 
     shift @$res;
 }
