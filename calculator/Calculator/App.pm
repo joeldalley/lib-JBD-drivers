@@ -15,7 +15,8 @@ sub calculate($) {
     my $text = shift;
     my $lexed = tokens $text, [types, Op];
     my $state = parser_state [@$lexed, token End_of_Input];
-    my $parsed = expr->($state) or die $state->error_string;
+    my $parsed = (expr ^ type End_of_Input)->($state) 
+        or die $state->error_string;
     return shift(@$parsed)->value if @$parsed == 2;
     die "Expecting result token & end of input token only";
 }
