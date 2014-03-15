@@ -11,17 +11,18 @@ sub types() { Signed, Unsigned }
 sub num()   { type Unsigned | type Signed }
 sub R()     { any map pair(Op, $_), qw(+ - * /) }
 
-my ($a0, $e0);
-my $a1 = parser {$a0->(@_)};
-my $e1 = parser {$e0->(@_)};
+my ($Atom, $Expr);
+my $atom = parser {$Atom->(@_)};
+my $expr = parser {$Expr->(@_)};
 
-$a0 = num | (pair(Op, '(') ^ $e1 ^ pair(Op, ')'));
-$e0 = $a1 ^ star(R ^ $a1);
+$Atom = num | (pair(Op, '(') ^ $expr ^ pair(Op, ')'));
+$Expr = $atom ^ star(R ^ $atom);
 
 sub expr() {
-    trans $e0, sub {
+    trans $Expr, sub {
         my $tokens = shift;
-        my $expr = join ' ', grep $_, map $_->value, @$tokens;
+        my $expr = join ' ', grep defined $_, 
+                   map $_->value, @$tokens;
         my $val = eval $expr; die $@ if $@;
         tokens $val, [types];
     }
