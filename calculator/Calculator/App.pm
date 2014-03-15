@@ -17,8 +17,8 @@ our %math = (
     '/' => sub {$_[0] / $_[1]}
     );
 
-init Expr     => \&reduce_expr,
-     enclosed => \&reduce_enclosed;
+init Product  => \&reduce,
+     enclosed => \&unenclose;
 
 
 # @param arrayref Array of JBD::Parser::Tokens.
@@ -29,7 +29,7 @@ sub phrase($) {
 
 # @param arrayref $tokens Array of JBD::Parser::Tokens.
 # @return mixed A result JBD::Parser::Token, or undef.
-sub reduce_expr($) {
+sub reduce($) {
     my $phrase = phrase shift;
 
     # Crunch numbers.
@@ -44,19 +44,20 @@ sub reduce_expr($) {
 }
 
 # @param arrayref $tokens Array of JBD::Parser::Tokens.
-# @return arrayref 1-element array. The middle token.
-sub reduce_enclosed($) { reduce_expr [shift->[1]] }
+# @return arrayref Given array, minus "(" and ")" tokens.
+sub unenclose($) { shift @{$_[0]}, pop @{$_[0]}; shift }
 
 # @param string $text User input, e.g., '3 + (.24 * -2)'
 # @return scalar Calculation result.
 sub calculate($) {
-    my $text = shift;
-
-    my $lexed = tokens $text, [types, Op];
-    my $state = parser_state [@$lexed, token End_of_Input];
-    my $parsed = (expr ^ type End_of_Input)->($state) 
-        or die $state->error_string;
-    shift(@$parsed)->value;
+    my $text    = shift;
+    my $lexed   = tokens $text, [types, Op];
+    my $state   = parser_state [@$lexed, token End_of_Input];
+    my $parsed  = (expr ^ type End_of_Input)->($state) 
+                  or die $state->error_string;
+    my $result  = shift @{reduce $parsed} 
+                  or die "Unable to reduce `@$parsed`";
+    $result->value;
 }
 
 1;

@@ -7,9 +7,10 @@ package Calculator::Grammar;
 use JBD::Parser::DSL;
 use JBD::Core::Exporter ':omni';
 
-my ($Atom, $Expr);
+my ($Atom, $Expr, $Prod);
 my $atom = parser {$Atom->(@_)};
 my $expr = parser {$Expr->(@_)};
+my $prod = parser {$Prod->(@_)};
 
 sub types()     { Signed, Unsigned }
 sub operators() { qw(+ - * /) }
@@ -17,7 +18,9 @@ sub num()       { type Unsigned | type Signed }
 sub op($)       { pair Op, shift }
 sub operator()  { any map op $_, operators }
 sub enclosed()  { op '(' ^ $expr ^ op ')' }
-sub Expr()      { $atom ^ star(operator ^ $atom) }
+sub Product()   { $atom ^ star((op '*' | op '/') ^ $atom) }
+sub product()   { $Prod }
+sub Expr()      { product ^ star((op '+' | op '-') ^ $expr) }
 sub expr()      { $Expr }
 
 sub init(%) {
@@ -28,7 +31,8 @@ sub init(%) {
         my $sub = shift;
         $trans{$sub} ? trans &$sub, $trans{$sub} : &$sub;
     };
-
+    
+    $Prod = $def->('Product');
     $Atom = num | $def->('enclosed');
     $Expr = $def->('Expr');
 }
