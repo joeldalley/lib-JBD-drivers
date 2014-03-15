@@ -28,7 +28,7 @@ sub phrase($) {
 }
 
 # @param arrayref $tokens Array of JBD::Parser::Tokens.
-# @return mixed A result JBD::Parser::Token, or undef.
+# @return mixed An arrayref of 1 JBD::Parser::Token, or undef.
 sub reduce($) {
     my $phrase = phrase shift;
 
