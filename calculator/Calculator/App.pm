@@ -6,7 +6,7 @@ package Calculator::App;
 # @version 2014/Feb/28
 
 use JBD::Parser::DSL;
-use Calculator::Grammar qw(init types operators expr);
+use Calculator::Grammar qw(init types expr);
 use JBD::Core::Exporter ':omni';
 use JBD::Core::List 'pairsof';
 
