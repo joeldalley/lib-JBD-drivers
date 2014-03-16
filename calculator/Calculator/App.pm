@@ -34,10 +34,12 @@ sub reduce($) {
 
     # Crunch numbers.
     my $value = shift @$phrase;
-    my $pairs = pairsof @$phrase;
-    while (my $pair = $pairs->()) {
-        my ($op, $num) = @$pair;
-        $value = $math{$op}->($value, $num);
+    if (@$phrase) {
+        my $pairs = pairsof @$phrase;
+        while (my $pair = $pairs->()) {
+            my ($op, $num) = @$pair;
+            $value = $math{$op}->($value, $num);
+        }
     }
 
     tokens $value, [types];

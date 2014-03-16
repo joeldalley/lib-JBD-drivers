@@ -1,46 +1,82 @@
 use JBD::Core::stern;
-use JBD::Core::List qw(zip pairsof);
+use JBD::Core::List qw(uniq collect flatmap zip pairsof);
 
 sub tester($$) {
     my ($label, $sub) = @_;
-    print "TESTING: $label\n";
+    print "\nTESTING: $label\n";
     $sub->();
 }
 
-sub pair_printer($) {
-    my ($k, $v) = @{$_[0]};
-    $v = 'UNDEF' if !defined $v;
-    print "$k=$v\n";
+sub printer_cfg() {
+    [' @', ' @', sub { 
+        my ($code, @args) = @_;
+        grep defined $_, (@_ = $code->(@args));
+    }],
+    [' @', '\@', sub { 
+        my ($code, @args) = @_;
+        [grep defined $_, (@_ = $code->(@args))];
+    }],
+    ['\@', ' @', sub { 
+        my $code = shift;
+        grep defined $_, @{$_ = $code->(\@_)};
+    }],
+    ['\@', '\@', sub {
+        my $code = shift;
+        [grep defined $_, @{$_ = $code->(\@_)}];
+    }];
 }
+
+sub printer(&@) {
+    my ($code, $for) = (shift, shift);
+
+    my %IN = map { 
+        do { my @m = ($_ =~ /(\w+)/go); 
+             my @n = ($_ =~ /(\W+)/go);
+             join '', @m, @n } => $_;
+    } @_;
+
+    for my $key (sort keys %IN) {
+        my $str = $IN{$key};
+        print "Input: $str\n";
+
+        for my $cfg (printer_cfg) {
+            my ($in, $out, $callback) = @$cfg;
+            my @res = $callback->($code, eval $str);
+            @res = @res == 1 ? (@{$res[0]}) : @res;
+            print "\t$for -> $in -> $out -> { @res }\n";
+        }
+    }
+}
+
+# Test uniq().
+my $uniq = sub {
+    printer {uniq @_} 'uniq'
+         => 'qw(a a b c)';
+};
 
 # Test pairsof().
 my $pairsof = sub {
-    my @kv = qw(a 1 b 2 c 3);
-    my $it = pairsof @kv;
-    while ($_ = $it->()) { pair_printer $_ }
-    print "\n";
-
-    @kv = qw(a uneven b number c of d elements e);
-    $it = pairsof @kv;
-    while ($_ = $it->()) { pair_printer $_ }
-    print "\n";
+    printer {flatmap collect pairsof @_} 'pairsof'
+         => 'qw(uneven sized list)'
+         => 'qw(a 1 b 2 c 3)';
 };
 
 # Test zip().
 my $zip = sub {
-    my @k  = qw(a b c);
-    my @v  = qw(1 2 3);
-    my @Z  = zip @k, @v;
-    my $it = pairsof @Z;
-    while ($_ = $it->()) { pair_printer $_ }
-    print "\n";
-
-    @v  = qw(only two_now);
-    @Z  = zip @k, @v;
-    $it = pairsof @Z;
-    while ($_ = $it->()) { pair_printer $_ }
-    print "\n";
+    printer {zip @_} 'zip'
+         => 'qw(a b c 1 2 3)',
+         => 'qw(uneven sized list 1 2)',
 };
 
+# Test flatmap().
+my $flat = sub {
+    printer {flatmap @_} 'flatmap'
+         => '([1, 2], [[3]], [4, [6]], 7)'
+         => '(1, 2, 3, 5, 8, 13)';
+
+};
+
+tester 'uniq()',    $uniq;
+tester 'pairsof()', $pairsof;
 tester 'zip()',     $zip;
-tester 'pairsof()', $pairsof; 
+tester 'flatmap()', $flat;
