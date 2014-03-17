@@ -14,15 +14,15 @@ sub printer_cfg() {
     }],
     [' @', '\@', sub { 
         my ($code, @args) = @_;
-        [grep defined $_, (@_ = $code->(@args))];
+        grep defined $_, (@_ = $code->(\@args));
     }],
     ['\@', ' @', sub { 
         my $code = shift;
-        grep defined $_, @{$_ = $code->(\@_)};
+        grep defined $_, @{$_ = $code->(@_)};
     }],
     ['\@', '\@', sub {
         my $code = shift;
-        [grep defined $_, @{$_ = $code->(\@_)}];
+        grep defined $_, @{$_ = $code->(\@_)};
     }];
 }
 
@@ -42,7 +42,6 @@ sub printer(&@) {
         for my $cfg (printer_cfg) {
             my ($in, $out, $callback) = @$cfg;
             my @res = $callback->($code, eval $str);
-            @res = @res == 1 ? (@{$res[0]}) : @res;
             print "\t$for -> $in -> $out -> { @res }\n";
         }
     }
@@ -51,6 +50,7 @@ sub printer(&@) {
 # Test uniq().
 my $uniq = sub {
     printer {uniq @_} 'uniq'
+         => '(0, 0.0, -0, -.0, -0.0e+10)'
          => 'qw(a a b c)';
 };
 
